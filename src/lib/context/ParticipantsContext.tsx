@@ -5,16 +5,19 @@ import { toast } from "sonner";
 
 interface ParticipantType {
   id: number;
-  name: string;
+  name: string[];
   email: string;
+  whatsapp_no: string;
+  alt_phone: string;
   event: string;
-  status: string;
-  created_at: string;
+  event_date: string;
+  event_location: string;
+  collage_name: string;
   amount_paid: number;
-  payment_method: string;
-  phone: string;
-  transaction_id: string;
-  transaction_screenshot: string;
+  transaction_id: string | null;
+  transaction_screenshot: string | null;
+  status: "approved" | "pending" | "rejected";
+  created_at: string;
 }
 
 interface ParticipantsContextType {
@@ -81,8 +84,9 @@ export function ParticipantsProvider({
       }
     } catch (error: any) {
       console.error("Error updating user status:", error);
-      toast.error("Error updating user status");
-      if (error.response.data.message) toast.error(error.response.data.message);
+      toast.error(
+        error?.response?.data?.message ?? "Error updating user status"
+      );
     }
   };
 

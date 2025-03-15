@@ -38,8 +38,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error: any) {
       console.error("Error fetching users:", error);
-      toast.error("Error fetching users");
-      if (error.response.data.message) toast.error(error.response.data.message);
+      toast.error(error?.response?.data?.message ?? "Error fetching users");
     }
   }
   async function updateStatus(userId: number) {
@@ -61,8 +60,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error: any) {
       console.error("Error updating user status:", error);
-      toast.error("Error updating user status");
-      if (error.response.data.message) toast.error(error.response.data.message);
+      toast.error(
+        error?.response?.data?.message ?? "Error updating user status"
+      );
     }
   }
 

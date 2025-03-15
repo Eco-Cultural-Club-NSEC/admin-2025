@@ -24,7 +24,7 @@ export const useAuth = create<AuthState>((set) => ({
         name: user.name,
         admin: user.admin
       }
-    });
+    });    
   },
   signOut: () => set({ user: null })
 }));

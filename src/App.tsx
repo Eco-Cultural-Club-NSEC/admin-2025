@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Login } from "./pages/Login";
 import { Users } from "./pages/Users";
@@ -9,13 +9,30 @@ import { EmailTemplates } from "./pages/EmailTemplates";
 import { Navbar } from "./components/Navbar";
 import { ThemeProvider } from "./lib/context/ThemeContext";
 import { useTheme } from "./lib/context/ThemeContext";
-import { Toaster } from "sonner";
+import { toast, Toaster } from "sonner";
 import { ParticipantsProvider } from "./lib/context/ParticipantsContext";
 import { UserProvider } from "./lib/context/UserContext";
 import { isMe } from "./lib/utils";
-
+import { useAuth } from "./lib/auth";
+import { Denied } from "./pages/Denied";
 function PrivateRoute({ children }: { children: React.ReactNode }) {
-  if (!isMe()) {
+  const user = useAuth((state) => state.user);
+  const signIn = useAuth((state) => state.signIn);
+  const [isLoggedIn] = React.useState(
+    user
+      ? true
+      : isMe().then((res) => {
+          if (res) {
+            signIn(res);
+            return true;
+          } else {
+            return false;
+          }
+        })
+  );
+
+  if (!isLoggedIn) {
+    console.log("not logged in");
     return <Navigate to="/login" replace />;
   }
 
@@ -25,6 +42,16 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
       <div className="pt-16">{children}</div>
     </>
   );
+}
+
+//Admin route
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const user = useAuth((state) => state.user);
+  // if (!user?.admin) {
+  //   toast.info("Admin access required to access this page!");
+  //   return <Navigate to="/acess-denied" replace />;
+  // }
+  return <>{children}</>;
 }
 
 function App() {
@@ -58,9 +85,11 @@ function AppContent() {
             path="/users"
             element={
               <PrivateRoute>
-                <UserProvider>
-                  <Users />
-                </UserProvider>
+                <AdminRoute>
+                  <UserProvider>
+                    <Users />
+                  </UserProvider>
+                </AdminRoute>
               </PrivateRoute>
             }
           />
@@ -68,9 +97,11 @@ function AppContent() {
             path="/participants"
             element={
               <PrivateRoute>
-                <ParticipantsProvider>
-                  <Participants />
-                </ParticipantsProvider>
+                <AdminRoute>
+                  <ParticipantsProvider>
+                    <Participants />
+                  </ParticipantsProvider>
+                </AdminRoute>
               </PrivateRoute>
             }
           />
@@ -83,6 +114,7 @@ function AppContent() {
             }
           />
           <Route path="/sucess" element={<Sucess />} />
+          <Route path="/acess-denied" element={<Denied />} />
         </Routes>
       </div>
     </BrowserRouter>

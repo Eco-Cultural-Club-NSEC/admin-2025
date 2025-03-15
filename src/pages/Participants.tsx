@@ -9,6 +9,7 @@ import { useParticipants } from "../lib/context/ParticipantsContext";
 
 export function Participants() {
   const { participants, setParticipants, updateStatus } = useParticipants();
+  console.log("participants", participants);
 
   const [selectedEvent, setSelectedEvent] = React.useState<string>("all");
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
@@ -24,16 +25,23 @@ export function Participants() {
 
   const events = Array.from(new Set(participants.map((p) => p.event)));
 
-  const filteredParticipants = participants.filter((participant) => {
-    const matchesEvent =
-      selectedEvent === "all" || participant.event === selectedEvent;
-    const matchesStatus =
-      statusFilter === "all" || participant.status === statusFilter;
-    const matchesSearch =
-      participant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      participant.email.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesEvent && matchesStatus && matchesSearch;
-  });
+  const filteredParticipants = participants
+    .filter((participant) => {
+      const matchesEvent =
+        selectedEvent === "all" || participant.event === selectedEvent;
+      const matchesStatus =
+        statusFilter === "all" || participant.status === statusFilter;
+      const matchesSearch =
+        participant.name
+          .join(" ")
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        participant.email.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesEvent && matchesStatus && matchesSearch;
+    })
+    .sort((p1: any, p2: any) =>
+      p1.name[0].localeCompare(p2.name[0], undefined, { sensitivity: "base" })
+    );
 
   const toggleStatus = async (
     participantId: number,
@@ -185,13 +193,13 @@ export function Participants() {
                     {filteredParticipants.map((participant) => (
                       <tr key={participant.id}>
                         <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white sm:pl-6">
-                          {participant.name}
+                          {participant?.name[0]}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
                           {participant.email}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
-                          {participant.phone}
+                          {participant.whatsapp_no}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
                           {participant.event}
@@ -292,10 +300,10 @@ export function Participants() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Name
+                  Participants Name
                 </h4>
                 <p className="mt-1 text-sm text-gray-900 dark:text-white">
-                  {selectedParticipant.name}
+                  {selectedParticipant.name.join(", ")}
                 </p>
               </div>
               <div>
@@ -327,9 +335,7 @@ export function Participants() {
                   Registration Date
                 </h4>
                 <p className="mt-1 text-sm text-gray-900 dark:text-white">
-                  {new Date(
-                    selectedParticipant.registeredAt
-                  ).toLocaleDateString()}
+                  {new Date(selectedParticipant.created_at).toDateString()}
                 </p>
               </div>
             </div>

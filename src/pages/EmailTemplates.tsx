@@ -1,10 +1,11 @@
-import React from 'react';
-import { Editor } from '@monaco-editor/react';
-import { Save } from 'lucide-react';
-import { toast } from 'sonner';
+import React, { useEffect } from "react";
+import { Editor } from "@monaco-editor/react";
+import { Save } from "lucide-react";
+import { toast } from "sonner";
+import axios from "axios";
 
 interface EmailTemplate {
-  id: 'approval' | 'rejection';
+  id: "approval" | "rejection";
   name: string;
   subject: string;
   content: string;
@@ -12,9 +13,9 @@ interface EmailTemplate {
 
 const defaultTemplates: EmailTemplate[] = [
   {
-    id: 'approval',
-    name: 'Approval Template',
-    subject: 'Your registration has been approved!',
+    id: "approval",
+    name: "Approval Template",
+    subject: "Your registration has been approved!",
     content: `<!DOCTYPE html>
 <html>
 <head>
@@ -50,9 +51,9 @@ const defaultTemplates: EmailTemplate[] = [
 </html>`,
   },
   {
-    id: 'rejection',
-    name: 'Rejection Template',
-    subject: 'Update on your registration',
+    id: "rejection",
+    name: "Rejection Template",
+    subject: "Update on your registration",
     content: `<!DOCTYPE html>
 <html>
 <head>
@@ -90,15 +91,79 @@ const defaultTemplates: EmailTemplate[] = [
 ];
 
 export function EmailTemplates() {
-  const [templates, setTemplates] = React.useState<EmailTemplate[]>(defaultTemplates);
-  const [selectedTemplate, setSelectedTemplate] = React.useState<EmailTemplate>(templates[0]);
-  const [editedContent, setEditedContent] = React.useState(selectedTemplate.content);
+  const [templates, setTemplates] =
+    React.useState<EmailTemplate[]>(defaultTemplates);
+  const [selectedTemplate, setSelectedTemplate] = React.useState<EmailTemplate>(
+    templates[0]
+  );
+  const [editedContent, setEditedContent] = React.useState(
+    selectedTemplate.content
+  );
   const [previewData] = React.useState({
-    name: 'John Doe',
-    event: 'Tech Conference 2024',
-    eventDate: 'March 15, 2024',
-    eventLocation: 'San Francisco, CA',
+    name: "John Doe",
+    event: "Tech Conference 2024",
+    eventDate: "March 15, 2024",
+    eventLocation: "San Francisco, CA",
   });
+
+  const getTemplates = async () => {
+    try {
+      const response = await axios.get(
+        "http://localhost:5001/api/v1/email-templates/get",
+        {
+          withCredentials: true,
+        }
+      );
+      return response.data.templates;
+    } catch (error) {
+      console.log(error);
+      return null;
+    }
+  };
+
+  // create template to the db if there are no templates
+  const createTemplates = async () => {
+    try {
+      console.log("createTemplates");
+
+      const promises = defaultTemplates.map((template) =>
+        axios.post(
+          "http://localhost:5001/api/v1/email-templates/create",
+          {
+            ...template,
+          },
+          {
+            withCredentials: true,
+          }
+        )
+      );
+
+      const responses = await Promise.all(promises);
+      const templates = responses.map((res) => res.data.template);
+      toast.success("Templates created successfully");
+      return templates;
+    } catch (error: any) {
+      console.log(error);
+      toast.error(error?.response?.data?.message ?? "Error creating template");
+    }
+  };
+
+  useEffect(() => {
+    getTemplates().then((data) => {
+      if (data.length == defaultTemplates.length) {
+        setTemplates(data);
+        setSelectedTemplate(data[0]);
+      } else {
+        createTemplates().then((data) => {
+          if (data) {
+            setTemplates(data);
+            setSelectedTemplate(data[0]);
+          }
+        });
+      }
+    });
+    console.log("templates", templates);
+  }, []);
 
   React.useEffect(() => {
     setEditedContent(selectedTemplate.content);
@@ -109,20 +174,37 @@ export function EmailTemplates() {
     setEditedContent(newContent);
   };
 
-  const handleSave = () => {
-    setTemplates((prev) =>
-      prev.map((t) =>
-        t.id === selectedTemplate.id ? { ...t, content: editedContent } : t
-      )
-    );
-    setSelectedTemplate((prev) => ({ ...prev, content: editedContent }));
-    toast.success('Template saved successfully');
+  const handleSave = async () => {
+    try {
+      const response = await axios.post(
+        "http://localhost:5001/api/v1/email-templates/update",
+        {
+          id: selectedTemplate.id,
+          name: selectedTemplate.name,
+          subject: selectedTemplate.subject,
+          content: editedContent,
+        },
+        { withCredentials: true }
+      );
+      if (response.status === 200) {
+        setTemplates((prev) =>
+          prev.map((t) =>
+            t.id === selectedTemplate.id ? { ...t, content: editedContent } : t
+          )
+        );
+        setSelectedTemplate((prev) => ({ ...prev, content: editedContent }));
+        toast.success(response.data.message);
+      }
+    } catch (error: any) {
+      console.log("Error saving Template: ", error);
+      toast.error(error?.response?.data?.message ?? "Error saving template");
+    }
   };
 
   const preview = React.useMemo(() => {
     let content = editedContent;
     Object.entries(previewData).forEach(([key, value]) => {
-      content = content.replace(new RegExp(`{{${key}}}`, 'g'), value);
+      content = content.replace(new RegExp(`{{${key}}}`, "g"), value);
     });
     return content;
   }, [editedContent, previewData]);
@@ -131,7 +213,9 @@ export function EmailTemplates() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="sm:flex sm:items-center sm:justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Email Templates</h1>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+            Email Templates
+          </h1>
           <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
             Customize email templates for participant notifications.
           </p>
@@ -164,18 +248,24 @@ export function EmailTemplates() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="space-y-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Template Editor</h2>
+            <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+              Template Editor
+            </h2>
             <div className="h-[600px] border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
               <Editor
                 height="100%"
                 defaultLanguage="html"
                 value={editedContent}
                 onChange={handleTemplateChange}
-                theme={document.documentElement.classList.contains('dark') ? 'vs-dark' : 'light'}
+                theme={
+                  document.documentElement.classList.contains("dark")
+                    ? "vs-dark"
+                    : "light"
+                }
                 options={{
                   minimap: { enabled: false },
                   fontSize: 14,
-                  wordWrap: 'on',
+                  wordWrap: "on",
                 }}
               />
             </div>
@@ -184,7 +274,9 @@ export function EmailTemplates() {
 
         <div className="space-y-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Preview</h2>
+            <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+              Preview
+            </h2>
             <div className="h-[600px] border border-gray-200 dark:border-gray-700 rounded-lg overflow-auto bg-white">
               <iframe
                 srcDoc={preview}
