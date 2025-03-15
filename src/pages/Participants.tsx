@@ -1,7 +1,7 @@
 import React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { participantsApi } from "../lib/api/participants";
-import { Check, X, Download, Eye, Search, Filter } from "lucide-react";
+import { Check, X, Download, Eye, Search } from "lucide-react";
 import { Modal } from "../components/Modal";
 import { AlertDialog } from "../components/AlertDialog";
 import { Pagination } from "../components/ui/pagination"; // Add this import
@@ -189,46 +189,51 @@ export function Participants() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="sm:flex sm:items-center sm:justify-between">
+    <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
+      {/* Header section */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">
             Event Participants
           </h1>
-          <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
+          <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">
             A list of all event participants and their current registration
             status.
           </p>
         </div>
         <button
           onClick={downloadExcel}
-          className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+          className="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
         >
           <Download className="h-4 w-4 mr-2" />
           Download Excel
         </button>
       </div>
 
-      <div className="mt-8 space-y-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
+      {/* Filters section */}
+      <div className="mt-4 sm:mt-8 space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Search input - full width on mobile */}
+          <div className="col-span-1 sm:col-span-2 lg:col-span-1">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search participants..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white dark:bg-gray-800 dark:border-gray-600"
+              />
             </div>
-            <input
-              type="text"
-              placeholder="Search participants..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-indigo-500 dark:focus:border-indigo-500"
-            />
           </div>
 
-          {/* Day Filter */}
+          {/* Select filters - stack on mobile */}
           <select
             value={selectedDay}
             onChange={(e) => setSelectedDay(e.target.value)}
-            className="block w-full sm:w-48 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+            className="block w-full rounded-md border-gray-300 dark:bg-gray-800 dark:border-gray-600"
           >
             <option value="all">All Days</option>
             {eventDays.map((day) => (
@@ -238,7 +243,6 @@ export function Participants() {
             ))}
           </select>
 
-          {/* Event Filter */}
           <select
             value={selectedEvent}
             onChange={(e) => setSelectedEvent(e.target.value)}
