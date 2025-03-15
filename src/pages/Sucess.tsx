@@ -9,14 +9,14 @@ export const Sucess = () => {
   const signIn = useAuth((state) => state.signIn);
   const checkAuth = async () => {
     try {
-      const response = await axios.get("http://localhost:5001/api/v1/auth/me", {
+      const response = await axios.get("http://localhost:8000/api/v1/auth/me", {
         withCredentials: true,
       });
       console.log("response", response);
       if (response.status == 200) {
         signIn(response.data.user);
         toast.success("logged in successfully");
-        navigate("/");
+        navigate("/dashboard");
       } else {
         console.log(response.data.message);
         toast.info(response.data.message);

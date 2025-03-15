@@ -1,110 +1,154 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { apiUri } from "../dummy-data";
+import React from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { participantsApi } from "../api/participants";
 
 interface ParticipantType {
   id: number;
-  name: string;
-  email: string;
-  event: string;
   status: string;
+  rejection_reason?: string;
+  email: string;
+  event_name: string; // Changed from event_title
+  team_lead_name: string; // Added to match DB schema
+  participant_names: string[];
+  participant_count: number;
+  whatsapp_number: string;
+  alternate_phone: string | null;
+  college: string;
+  payment_status: string;
+  upi_transaction_id: string | null;
+  payment_screenshot_url: string | null;
   created_at: string;
-  amount_paid: number;
-  payment_method: string;
-  phone: string;
-  transaction_id: string;
-  transaction_screenshot: string;
+  updated_at: string;
 }
 
 interface ParticipantsContextType {
   participants: ParticipantType[];
   setParticipants: (participants: ParticipantType[]) => void;
-  updateStatus: (userId: number, status: string) => void;
+  updateStatus: (id: number, status: string, reason?: string) => Promise<void>;
+  loading: boolean;
+  optimisticUpdateStatus: (id: number, status: string, reason?: string) => void;
 }
 
 export const ParticipantsContext = React.createContext<ParticipantsContextType>(
   {
     participants: [],
     setParticipants: () => {},
-    updateStatus: () => {},
+    updateStatus: async () => {},
+    loading: false,
+    optimisticUpdateStatus: () => {},
   }
 );
+
+export function useParticipants() {
+  const context = React.useContext(ParticipantsContext);
+  if (!context) {
+    throw new Error("useParticipants must be used within ParticipantsProvider");
+  }
+  return context;
+}
 
 export function ParticipantsProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [participants, setParticipants] = useState<ParticipantType[]>([]);
+  const queryClient = useQueryClient();
 
-  const fetchParticipants = async () => {
-    try {
-      const res = await axios.get(`${apiUri}/participants`, {
-        withCredentials: true,
+  const {
+    data: participants = [],
+    isLoading: loading,
+    error,
+  } = useQuery({
+    queryKey: ["participants"],
+    queryFn: participantsApi.getParticipants,
+    staleTime: 30000, // Data stays fresh for 30 seconds
+    cacheTime: 1000 * 60 * 5, // Cache data for 5 minutes
+    refetchOnWindowFocus: false,
+    retry: 1,
+  });
+
+  const optimisticUpdateStatus = React.useCallback(
+    (id: number, status: string, reason?: string) => {
+      queryClient.setQueryData<ParticipantType[]>(["participants"], (old) => {
+        if (!old) return [];
+        return old.map((participant) =>
+          participant.id === id
+            ? {
+                ...participant,
+                status,
+                rejection_reason: reason,
+                updated_at: new Date().toISOString(),
+              }
+            : participant
+        );
       });
-      if (res.status == 200) {
-        setParticipants(res.data.participants);
-      } else {
-        toast.info(res.data.message);
-      }
-    } catch (error: any) {
-      console.error("Error fetching participants:", error.message);
-      toast.error("Error fetching participants");
-      if (error.response.data.message) toast.error(error.response.data.message);
-    }
-  };
+    },
+    [queryClient]
+  );
 
-  const updateStatus = async (userId: number, status: string) => {
-    try {
-      const res = await axios.get(
-        `${apiUri}/participants/togglestatus?id=${userId}&status=${status}`,
-        {
-          withCredentials: true,
-        }
-      );
-      if (res.status == 200) {
-        setParticipants((prevParticipants) =>
-          prevParticipants.map((participant) =>
-            participant.id === userId
-              ? { ...participant, status: res.data.participant.status }
-              : participant
-          )
-        );
-        toast.success(
-          `Participant ${
-            status === "approved" ? "approved" : "rejected"
-          } successfully`
-        );
-      } else {
-        toast.info(res.data.message);
-      }
-    } catch (error: any) {
-      console.error("Error updating user status:", error);
-      toast.error("Error updating user status");
-      if (error.response.data.message) toast.error(error.response.data.message);
-    }
-  };
+  const updateStatusMutation = useMutation({
+    mutationFn: ({
+      id,
+      status,
+      reason,
+    }: {
+      id: number;
+      status: string;
+      reason?: string;
+    }) => participantsApi.updateStatus(id.toString(), status, reason),
+    onMutate: async ({ id, status, reason }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries(["participants"]);
 
-  useEffect(() => {
-    fetchParticipants();
-  }, []);
+      // Snapshot the previous value
+      const previousParticipants = queryClient.getQueryData<ParticipantType[]>([
+        "participants",
+      ]);
+
+      // Optimistically update
+      optimisticUpdateStatus(id, status, reason);
+
+      return { previousParticipants };
+    },
+    onError: (err, variables, context) => {
+      // Revert back on failure
+      if (context?.previousParticipants) {
+        queryClient.setQueryData(
+          ["participants"],
+          context.previousParticipants
+        );
+      }
+      toast.error("Failed to update status");
+    },
+    onSettled: () => {
+      // Refetch after error or success
+      queryClient.invalidateQueries(["participants"]);
+    },
+  });
+
+  const value = React.useMemo(
+    () => ({
+      participants,
+      setParticipants: (data: ParticipantType[]) =>
+        queryClient.setQueryData(["participants"], data),
+      updateStatus: (id: number, status: string, reason?: string) =>
+        updateStatusMutation.mutateAsync({ id, status, reason }),
+      loading,
+      optimisticUpdateStatus,
+    }),
+    [
+      participants,
+      updateStatusMutation,
+      loading,
+      queryClient,
+      optimisticUpdateStatus,
+    ]
+  );
 
   return (
-    <ParticipantsContext.Provider
-      value={{ participants, setParticipants, updateStatus }}
-    >
+    <ParticipantsContext.Provider value={value}>
       {children}
     </ParticipantsContext.Provider>
   );
-}
-
-export function useParticipants() {
-  const context = React.useContext(ParticipantsContext);
-  if (context === undefined) {
-    throw new Error(
-      "useParticipants must be used within a ParticipantsProvider"
-    );
-  }
-  return context;
 }

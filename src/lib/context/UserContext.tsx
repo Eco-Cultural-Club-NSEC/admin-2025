@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { apiUri } from "../dummy-data";
+import api from "../../api/client";
 import { toast } from "sonner";
+import { useAuth } from "../auth"; // Import useAuth
 
 interface UserType {
   id: number;
   name: string;
   email: string;
-  admin: boolean;
+  is_admin: boolean; // Changed from admin to is_admin
   created_at: Date;
 }
 
@@ -15,33 +15,46 @@ interface UserContextType {
   users: UserType[];
   setUsers: (users: UserType[]) => void;
   updateStatus: (userId: number) => void;
+  loading: boolean;
 }
 
 export const UserContext = React.createContext<UserContextType>({
   users: [],
   setUsers: () => {},
   updateStatus: () => {},
+  loading: false,
 });
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [users, setUsers] = useState<UserType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   async function fetchUsers() {
+    if (!user?.is_admin) {
+      setLoading(false);
+      return;
+    }
+
     try {
-      const res = await axios.get(`${apiUri}/user/all`, {
-        withCredentials: true,
-      });
-      if (res.status == 200) {
-        setUsers(res.data.users);
+      setLoading(true);
+      const response = await api.get("/user/all");
+
+      if (response.data?.users) {
+        setUsers(response.data.users);
       } else {
-        toast.info(res.data.message);
+        setUsers([]);
+        toast.error("No users data received");
       }
     } catch (error: any) {
       console.error("Error fetching users:", error);
-      toast.error("Error fetching users");
-      if (error.response.data.message) toast.error(error.response.data.message);
+      toast.error(error.response?.data?.message || "Failed to load users");
+      setUsers([]);
+    } finally {
+      setLoading(false);
     }
   }
+
   async function updateStatus(userId: number) {
     try {
       const res = await axios.get(`${apiUri}/user/toggleadmin/?id=${userId}`, {
@@ -52,7 +65,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       if (res.status == 200) {
         setUsers((prevUsers) =>
           prevUsers.map((user) =>
-            user.id === userId ? { ...user, admin: res.data.user.admin } : user
+            user.id === userId
+              ? { ...user, is_admin: res.data.user.is_admin }
+              : user
           )
         );
         toast.success(res.data.message);
@@ -62,16 +77,19 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     } catch (error: any) {
       console.error("Error updating user status:", error);
       toast.error("Error updating user status");
-      if (error.response.data.message) toast.error(error.response.data.message);
+      if (error.response?.data?.message)
+        toast.error(error.response.data.message);
     }
   }
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if (user?.is_admin) {
+      fetchUsers();
+    }
+  }, [user]);
 
   return (
-    <UserContext.Provider value={{ users, setUsers, updateStatus }}>
+    <UserContext.Provider value={{ users, setUsers, updateStatus, loading }}>
       {children}
     </UserContext.Provider>
   );

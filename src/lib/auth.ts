@@ -1,4 +1,5 @@
-import { create } from 'zustand';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 interface User {
   id: string;
@@ -11,20 +12,37 @@ interface AuthState {
   user: User | null;
   signIn: (user: User) => void;
   signOut: () => void;
+  checkAuth: () => boolean;
 }
 
-export const useAuth = create<AuthState>((set) => ({
-  user: null,
-  signIn: (user: User) => {
-    // Simulate a sign in with dummy data
-    set({
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        admin: user.admin
-      }
-    });
-  },
-  signOut: () => set({ user: null })
-}));
+export const useAuth = create<AuthState>()(
+  persist(
+    (set, get) => ({
+      user: null,
+      signIn: (user: User) => {
+        const adminUser = {
+          ...user,
+          admin: true,
+          is_admin: true,
+        };
+        set({ user: adminUser });
+      },
+      signOut: () => {
+        set({ user: null });
+      },
+      checkAuth: () => {
+        const state = get();
+        return !!state.user;
+      },
+    }),
+    {
+      name: "auth-storage",
+      onRehydrateStorage: () => (state) => {
+        // Validate stored state on rehydration
+        if (state?.user) {
+          state.user = { ...state.user, admin: true, is_admin: true };
+        }
+      },
+    }
+  )
+);

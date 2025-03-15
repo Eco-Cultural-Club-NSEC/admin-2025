@@ -1,135 +1,130 @@
 import React from "react";
-import { users } from "../lib/dummy-data";
-import { Shield, ShieldOff } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { usersApi } from "../lib/api/users";
+import { toast } from "sonner";
 import { AlertDialog } from "../components/AlertDialog";
-import { useUser } from "../lib/context/UserContext";
+import { LoadingOverlay } from "../components/ui/spinner";
 
 export function Users() {
-  const { users, setUsers, updateStatus } = useUser();
-  const [showAlertDialog, setShowAlertDialog] = React.useState(false);
-  const [pendingAction, setPendingAction] = React.useState<{
-    userId: number;
-    isAdmin: boolean;
-  } | null>(null);
+  const queryClient = useQueryClient();
+  const [selectedUser, setSelectedUser] = React.useState<any>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
 
-  const handleToggleClick = (userId: number, isAdmin: boolean) => {
-    setPendingAction({ userId, isAdmin });
-    setShowAlertDialog(true);
-  };
+  const { data: users, isLoading } = useQuery({
+    queryKey: ["users"],
+    queryFn: usersApi.getUsers,
+  });
 
-  const handleConfirmToggle = () => {
-    if (!pendingAction) return;
-    updateStatus(pendingAction.userId);
-    setPendingAction(null);
-  };
+  const deleteMutation = useMutation({
+    mutationFn: usersApi.deleteUser,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success("User deleted successfully");
+      setShowDeleteDialog(false);
+    },
+    onError: () => {
+      toast.error("Failed to delete user");
+    },
+  });
+
+  const toggleAdminStatus = useMutation({
+    mutationFn: usersApi.toggleAdmin,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries(["users"]);
+      toast.success(data.message, {
+        position: "bottom-right",
+      });
+    },
+    onError: (error: any) => {
+      toast.error(
+        error.response?.data?.message || "Failed to update admin status",
+        {
+          position: "bottom-right",
+        }
+      );
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="sm:flex sm:items-center">
-        <div className="sm:flex-auto">
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
-            Users
-          </h1>
-          <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
-            A list of all users in the system including their name, email, and
-            admin status.
-          </p>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-6">Users Management</h1>
+      <LoadingOverlay loading={isLoading}>
+        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Name
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Email
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Admin Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {users?.map((user: any) => (
+                <tr key={user.id}>
+                  <td className="px-6 py-4 whitespace-nowrap">{user.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        user.is_admin
+                          ? "bg-green-100 text-green-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {user.is_admin ? "Admin" : "User"}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <button
+                      onClick={() => toggleAdminStatus.mutate(user.id)}
+                      className="text-indigo-600 hover:text-indigo-900 mr-4"
+                    >
+                      Toggle Admin
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedUser(user);
+                        setShowDeleteDialog(true);
+                      }}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      </div>
-      <div className="mt-8 flex flex-col">
-        <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-          <div className="inline-block min-w-full py-2 align-middle">
-            <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
-              <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-800">
-                  <tr>
-                    <th
-                      scope="col"
-                      className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-white sm:pl-6"
-                    >
-                      Name
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white"
-                    >
-                      Email
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white"
-                    >
-                      Created At
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white"
-                    >
-                      Admin Status
-                    </th>
-                    <th
-                      scope="col"
-                      className="relative py-3.5 pl-3 pr-4 sm:pr-6"
-                    >
-                      <span className="sr-only">Actions</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
-                  {users.map((user) => (
-                    <tr key={user.id}>
-                      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white sm:pl-6">
-                        {user.name}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
-                        {user.email}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
-                        {new Date(user.created_at).toDateString()}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
-                        {user.admin ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                            Admin
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
-                            User
-                          </span>
-                        )}
-                      </td>
-                      <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                        <button
-                          onClick={() => handleToggleClick(user.id, user.admin)}
-                          className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
-                        >
-                          {user.admin ? (
-                            <ShieldOff className="h-5 w-5" />
-                          ) : (
-                            <Shield className="h-5 w-5" />
-                          )}
-                          <span className="sr-only">Toggle admin status</span>
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
+      </LoadingOverlay>
 
       <AlertDialog
-        isOpen={showAlertDialog}
-        onClose={() => setShowAlertDialog(false)}
-        onConfirm={handleConfirmToggle}
-        title="Confirm Admin Status Change"
-        message={`Are you sure you want to ${
-          pendingAction?.isAdmin
-            ? "remove admin access from"
-            : "grant admin access to"
-        } this user? This action can be reversed later.`}
+        isOpen={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        title="Delete User"
+        message={`Are you sure you want to delete ${selectedUser?.name}?`}
+        onConfirm={() => {
+          if (selectedUser) {
+            deleteMutation.mutate(selectedUser.id);
+          }
+        }}
       />
     </div>
   );

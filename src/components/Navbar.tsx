@@ -16,6 +16,7 @@ import { useTheme } from "../lib/context/ThemeContext";
 import { cn } from "../lib/utils";
 import axios from "axios";
 import { toast } from "sonner";
+import { authService } from "../services/auth.service";
 
 export function Navbar() {
   const navigate = useNavigate();
@@ -26,16 +27,13 @@ export function Navbar() {
 
   const handleSignOut = async () => {
     try {
-      const res = await axios.get("http://localhost:5001/api/v1/auth/logout", {
-        withCredentials: true,
-      });
-      console.log("Logout response", res.data);
-      toast.success(res.data.message);
+      await authService.logout();
       signOut();
-      // Redirect user after logout
+      toast.success("Logged out successfully");
       navigate("/login");
-    } catch (error) {
-      console.error("Logout failed", error);
+    } catch (error: any) {
+      console.error("Logout failed:", error);
+      toast.error("Logout failed");
     }
   };
 
@@ -87,18 +85,18 @@ export function Navbar() {
               )}
             </button>
             {user && (
-              <>
-                <span className="hidden md:inline text-sm text-gray-700 dark:text-gray-300">
+              <div className="flex items-center space-x-3">
+                <span className="text-sm text-gray-700 dark:text-gray-300">
                   {user.email}
                 </span>
                 <button
                   onClick={handleSignOut}
-                  className="hidden md:inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800"
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
                 >
                   <LogOut className="h-4 w-4 mr-2" />
-                  Sign Out
+                  Logout
                 </button>
-              </>
+              </div>
             )}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
