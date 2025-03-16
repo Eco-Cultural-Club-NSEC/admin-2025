@@ -49,4 +49,4 @@ export const participants = [
   }
 ];
 
-export const apiUri = "http://localhost:5001/api/v1";
+export const apiUri = process.env.NODE_ENV === "development" ? "http://localhost:5001/api/v1" : "https://mesmerizer-2025-seven.vercel.app/api/v1";

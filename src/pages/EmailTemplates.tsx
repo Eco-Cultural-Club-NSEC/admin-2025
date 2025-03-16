@@ -3,6 +3,7 @@ import { Editor } from "@monaco-editor/react";
 import { Save } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
+import { apiUri } from "../lib/dummy-data";
 
 interface EmailTemplate {
   id: "approval" | "rejection";
@@ -111,7 +112,7 @@ export function EmailTemplates() {
   const getTemplates = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5001/api/v1/email-templates/get",
+        `${apiUri}/email-templates/get`,
         {
           withCredentials: true,
         }
@@ -130,7 +131,7 @@ export function EmailTemplates() {
 
       const promises = defaultTemplates.map((template) =>
         axios.post(
-          "http://localhost:5001/api/v1/email-templates/create",
+          `${apiUri}/email-templates/create`,
           {
             ...template,
           },
@@ -180,7 +181,7 @@ export function EmailTemplates() {
     setLoading(true);
     try {
       const response = await axios.post(
-        "http://localhost:5001/api/v1/email-templates/update",
+        `${apiUri}/email-templates/update`,
         {
           id: selectedTemplate.id,
           name: selectedTemplate.name,
