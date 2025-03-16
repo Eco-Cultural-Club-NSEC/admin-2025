@@ -10,7 +10,7 @@ export function cn(...inputs: ClassValue[]) {
 export async function isMe(): Promise<any> {
   console.log("Making auth check request to backend...");
   try {
-    const res = await axios.get(`${apiUri}/api/v1/auth/me`, {
+    const res = await axios.get(`${apiUri}/auth/me`, {
       withCredentials: true,
     });
     console.log("Auth check response:", res.status, res.data);

@@ -11,7 +11,7 @@ export function Login() {
     // Simulate API delay
     try {
       const response = await axios.get(
-        `${apiUri}/api/v1/auth/google`
+        `${apiUri}/auth/google`
       );
       console.log("response", response);
 

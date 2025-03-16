@@ -10,7 +10,7 @@ export const Sucess = () => {
   const signIn = useAuth((state) => state.signIn);
   const checkAuth = async () => {
     try {
-      const response = await axios.get(`${apiUri}/api/v1/auth/me`, {
+      const response = await axios.get(`${apiUri}/auth/me`, {
         withCredentials: true,
       });
       console.log("response", response);
