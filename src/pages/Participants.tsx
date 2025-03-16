@@ -8,9 +8,9 @@ import { Pagination } from "../components/ui/pagination"; // Add this import
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { useParticipants } from "../lib/context/ParticipantsContext";
-import { events } from "../../../frontend/src/data";
 import { RejectionDialog } from "../components/RejectionDialog";
 import { LoadingOverlay } from "../components/ui/spinner";
+import { events } from "../types/data";
 
 interface Participant {
   id: number;
