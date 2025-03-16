@@ -11,10 +11,13 @@ export function Participants() {
   const [selectedEvent, setSelectedEvent] = React.useState<string>("all");
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [selectedParticipant, setSelectedParticipant] = React.useState<any>(null);
+  const [selectedParticipant, setSelectedParticipant] =
+    React.useState<any>(null);
   const [showDetailsModal, setShowDetailsModal] = React.useState(false);
   const [showAlertDialog, setShowAlertDialog] = React.useState(false);
-  const [processingParticipantId, setProcessingParticipantId] = React.useState<number | null>(null);
+  const [processingParticipantId, setProcessingParticipantId] = React.useState<
+    number | null
+  >(null);
   const [pendingAction, setPendingAction] = React.useState<{
     participantId: number;
     newStatus: "approved" | "rejected";
@@ -52,10 +55,12 @@ export function Participants() {
     if (!pendingAction) return;
     setProcessingParticipantId(pendingAction.participantId);
     setShowAlertDialog(false);
-    
+
     try {
-      await updateStatus(pendingAction.participantId, pendingAction.newStatus);
-      toast.success(`Participant status ${pendingAction.newStatus} successfully`);
+      updateStatus(pendingAction.participantId, pendingAction.newStatus);
+      toast.success(
+        `Participant status ${pendingAction.newStatus} successfully`
+      );
     } catch (error) {
       toast.error("Failed to update participant status");
     } finally {
@@ -148,7 +153,7 @@ export function Participants() {
               <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
                 <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-600">
                   <thead className="bg-gray-50 dark:bg-gray-800">
-                  <tr className="text-gray-900 dark:text-white">
+                    <tr className="text-gray-900 dark:text-white">
                       <th
                         scope="col"
                         className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold sm:pl-6"
@@ -208,7 +213,7 @@ export function Participants() {
                   <tbody className="divide-y divide-gray-200 bg-white dark:bg-gray-900 dark:divide-gray-700">
                     {filteredParticipants.map((participant) => (
                       <tr key={participant.id}>
-                         <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white sm:pl-6">
+                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white sm:pl-6">
                           {participant?.name[0]}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
@@ -256,7 +261,7 @@ export function Participants() {
                             >
                               <Eye className="h-5 w-5" />
                             </button>
-                            
+
                             {processingParticipantId === participant.id ? (
                               <div className="animate-spin inline-block w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full"></div>
                             ) : (
@@ -264,14 +269,18 @@ export function Participants() {
                                 {participant.status === "pending" && (
                                   <>
                                     <button
-                                      onClick={() => toggleStatus(participant.id, "approved")}
+                                      onClick={() =>
+                                        toggleStatus(participant.id, "approved")
+                                      }
                                       className="text-green-600 hover:text-green-900"
                                       disabled={!!processingParticipantId}
                                     >
                                       <Check className="h-5 w-5" />
                                     </button>
                                     <button
-                                      onClick={() => toggleStatus(participant.id, "rejected")}
+                                      onClick={() =>
+                                        toggleStatus(participant.id, "rejected")
+                                      }
                                       className="text-red-600 hover:text-red-900"
                                       disabled={!!processingParticipantId}
                                     >
@@ -281,7 +290,9 @@ export function Participants() {
                                 )}
                                 {participant.status === "approved" && (
                                   <button
-                                    onClick={() => toggleStatus(participant.id, "rejected")}
+                                    onClick={() =>
+                                      toggleStatus(participant.id, "rejected")
+                                    }
                                     className="text-red-600 hover:text-red-900"
                                     disabled={!!processingParticipantId}
                                   >
@@ -290,7 +301,9 @@ export function Participants() {
                                 )}
                                 {participant.status === "rejected" && (
                                   <button
-                                    onClick={() => toggleStatus(participant.id, "approved")}
+                                    onClick={() =>
+                                      toggleStatus(participant.id, "approved")
+                                    }
                                     className="text-green-600 hover:text-green-900"
                                     disabled={!!processingParticipantId}
                                   >

@@ -1,5 +1,4 @@
 import React from "react";
-import { users } from "../lib/dummy-data";
 import { Shield, ShieldOff } from "lucide-react";
 import { AlertDialog } from "../components/AlertDialog";
 import { useUser } from "../lib/context/UserContext";
@@ -12,6 +11,9 @@ export function Users() {
     isAdmin: boolean;
   } | null>(null);
 
+  const [processingUserId, setProcessingUserId] = React.useState<number | null>(
+    null
+  );
   const handleToggleClick = (userId: number, isAdmin: boolean) => {
     setPendingAction({ userId, isAdmin });
     setShowAlertDialog(true);
@@ -19,8 +21,15 @@ export function Users() {
 
   const handleConfirmToggle = () => {
     if (!pendingAction) return;
-    updateStatus(pendingAction.userId);
-    setPendingAction(null);
+    setProcessingUserId(pendingAction.userId);
+    try {
+      updateStatus(pendingAction.userId);
+    } catch (error) {
+      console.error("Error updating user status:", error);
+    } finally {
+      setProcessingUserId(null);
+      setPendingAction(null);
+    }
   };
 
   return (
@@ -103,11 +112,14 @@ export function Users() {
                           onClick={() => handleToggleClick(user.id, user.admin)}
                           className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
                         >
-                          {user.admin ? (
+                          {processingUserId === user.id ? (
+                            <div className="animate-spin inline-block w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full"></div>
+                          ) : user.admin ? (
                             <ShieldOff className="h-5 w-5" />
                           ) : (
                             <Shield className="h-5 w-5" />
                           )}
+
                           <span className="sr-only">Toggle admin status</span>
                         </button>
                       </td>

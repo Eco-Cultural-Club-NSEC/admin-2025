@@ -106,6 +106,8 @@ export function EmailTemplates() {
     eventLocation: "San Francisco, CA",
   });
 
+  const [loading, setLoading] = React.useState(false);
+
   const getTemplates = async () => {
     try {
       const response = await axios.get(
@@ -175,6 +177,7 @@ export function EmailTemplates() {
   };
 
   const handleSave = async () => {
+    setLoading(true);
     try {
       const response = await axios.post(
         "http://localhost:5001/api/v1/email-templates/update",
@@ -198,6 +201,8 @@ export function EmailTemplates() {
     } catch (error: any) {
       console.log("Error saving Template: ", error);
       toast.error(error?.response?.data?.message ?? "Error saving template");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -238,9 +243,19 @@ export function EmailTemplates() {
           <button
             onClick={handleSave}
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800"
+            disabled={loading}
           >
-            <Save className="h-4 w-4 mr-2" />
-            Save Template
+            {loading ? (
+              <>
+                <span className="animate-spin inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full me-2"></span>
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Save Template
+              </>
+            )}
           </button>
         </div>
       </div>
