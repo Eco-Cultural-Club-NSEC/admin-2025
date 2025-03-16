@@ -3,13 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import axios from "axios";
 import { toast } from "sonner";
+import { apiUri } from "../lib/dummy-data";
 
 export const Sucess = () => {
   const navigate = useNavigate();
   const signIn = useAuth((state) => state.signIn);
   const checkAuth = async () => {
     try {
-      const response = await axios.get("http://localhost:5001/api/v1/auth/me", {
+      const response = await axios.get(`${apiUri}/api/v1/auth/me`, {
         withCredentials: true,
       });
       console.log("response", response);

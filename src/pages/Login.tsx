@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { Mail } from "lucide-react";
 import axios from "axios";
+import { apiUri } from "../lib/dummy-data";
 
 export function Login() {
   const [loading, setLoading] = React.useState(false);
@@ -10,7 +11,7 @@ export function Login() {
     // Simulate API delay
     try {
       const response = await axios.get(
-        "http://localhost:5001/api/v1/auth/google"
+        `${apiUri}/api/v1/auth/google`
       );
       console.log("response", response);
 

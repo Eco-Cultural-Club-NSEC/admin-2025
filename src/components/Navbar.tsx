@@ -16,6 +16,7 @@ import { useTheme } from "../lib/context/ThemeContext";
 import { cn } from "../lib/utils";
 import axios from "axios";
 import { toast } from "sonner";
+import { apiUri } from "../lib/dummy-data";
 
 export function Navbar() {
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ export function Navbar() {
 
   const handleSignOut = async () => {
     try {
-      const res = await axios.get("http://localhost:5001/api/v1/auth/logout", {
+      const res = await axios.get(`${apiUri}/api/v1/auth/logout`, {
         withCredentials: true,
       });
       console.log("Logout response", res.data);
