@@ -18,21 +18,48 @@ import { Denied } from "./pages/Denied";
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const user = useAuth((state) => state.user);
   const signIn = useAuth((state) => state.signIn);
-  const [isLoggedIn] = React.useState(
-    user
-      ? true
-      : isMe().then((res) => {
-          if (res) {
-            signIn(res);
-            return true;
+  const [isLoading, setIsLoading] = React.useState(true);
+  
+  useEffect(() => {
+    const checkAuth = async () => {
+      console.log("Starting auth check. Current user state:", user);
+      
+      if (!user) {
+        try {
+          console.log("No user in state, checking with backend...");
+          const userData = await isMe();
+          console.log("Backend response:", userData);
+          
+          if (userData) {
+            console.log("Valid user data received, signing in:", userData);
+            signIn(userData);
+            setIsLoading(false);
           } else {
-            return false;
+            console.log("No valid user data from backend");
+            setIsLoading(false);
           }
-        })
-  );
+        } catch (error) {
+          console.error("Authentication check failed:", error);
+          setIsLoading(false);
+        }
+      } else {
+        console.log("User already in state:", user);
+        setIsLoading(false);
+      }
+    };
+    
+    checkAuth();
+  }, []);  // Remove dependencies to ensure it only runs once on mount
 
-  if (!isLoggedIn) {
-    console.log("not logged in");
+  if (isLoading) {
+    return <div>Checking authentication...</div>;
+  }
+  
+  // Access the latest user state
+  const currentUser = useAuth.getState().user;
+  
+  if (!currentUser) {
+    console.log("Not logged in, redirecting...");
     return <Navigate to="/login" replace />;
   }
 
@@ -43,6 +70,7 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
     </>
   );
 }
+
 
 //Admin route
 function AdminRoute({ children }: { children: React.ReactNode }) {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { apiUri } from "../dummy-data";
 import { toast } from "sonner";
@@ -22,41 +22,34 @@ interface ParticipantType {
 
 interface ParticipantsContextType {
   participants: ParticipantType[];
-  setParticipants: (participants: ParticipantType[]) => void;
-  updateStatus: (userId: number, status: string) => void;
+  setParticipants: React.Dispatch<React.SetStateAction<ParticipantType[]>>;
+  updateStatus: (userId: number, status: "approved" | "rejected") => void;
+  fetchParticipants: () => void;
+  loading: boolean;
 }
 
-export const ParticipantsContext = React.createContext<ParticipantsContextType>(
-  {
-    participants: [],
-    setParticipants: () => {},
-    updateStatus: () => {},
-  }
-);
+export const ParticipantsContext = React.createContext<ParticipantsContextType | undefined>(undefined);
 
-export function ParticipantsProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export function ParticipantsProvider({ children }: { children: React.ReactNode }) {
   const [participants, setParticipants] = useState<ParticipantType[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);   
 
-  const fetchParticipants = async () => {
+  const fetchParticipants = useCallback(async () => {
     try {
-      const res = await axios.get(`${apiUri}/participants`, {
-        withCredentials: true,
-      });
-      if (res.status == 200) {
+      setLoading(true); 
+      const res = await axios.get(`${apiUri}/participants`, { withCredentials: true });
+      if (res.status === 200) {
         setParticipants(res.data.participants);
       } else {
         toast.info(res.data.message);
       }
     } catch (error: any) {
       console.error("Error fetching participants:", error.message);
-      toast.error("Error fetching participants");
-      if (error.response.data.message) toast.error(error.response.data.message);
+      toast.error(error.response?.data?.message || "Error fetching participants");
+    } finally {
+      setLoading(false); 
     }
-  };
+  }, []);
 
   const updateStatus = async (userId: number, status: string) => {
     try {
@@ -92,12 +85,10 @@ export function ParticipantsProvider({
 
   useEffect(() => {
     fetchParticipants();
-  }, []);
+  }, [fetchParticipants]);
 
   return (
-    <ParticipantsContext.Provider
-      value={{ participants, setParticipants, updateStatus }}
-    >
+    <ParticipantsContext.Provider value={{ participants, setParticipants, updateStatus, fetchParticipants, loading }}>
       {children}
     </ParticipantsContext.Provider>
   );
@@ -105,10 +96,8 @@ export function ParticipantsProvider({
 
 export function useParticipants() {
   const context = React.useContext(ParticipantsContext);
-  if (context === undefined) {
-    throw new Error(
-      "useParticipants must be used within a ParticipantsProvider"
-    );
+  if (!context) {
+    throw new Error("useParticipants must be used within a ParticipantsProvider");
   }
   return context;
 }
