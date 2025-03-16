@@ -180,7 +180,7 @@ function AppContent() {
               </PrivateRoute>
             }
           />
-
+          <Route path="/auth" element={<div>Authenticating...</div>} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </div>

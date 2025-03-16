@@ -4,7 +4,7 @@ import { toast } from "sonner"; // Changed from react-toastify to sonner
 
 const AuthContext = createContext(null);
 
-export const AuthProvider = ({ children }) => {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
   const location = useLocation(); // Add this to access location
@@ -22,11 +22,11 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // Check for auth callback parameters when on the /auth route
+  // Add pathname check to useEffect
   useEffect(() => {
     if (location.pathname === "/auth") {
-      const params = new URLSearchParams(location.search);
-      handleAuthCallback(params);
+      const searchParams = new URLSearchParams(window.location.search);
+      handleAuthCallback(searchParams);
     }
   }, [location.pathname, location.search]);
 
@@ -45,8 +45,8 @@ export const AuthProvider = ({ children }) => {
     return !!user;
   };
 
-  // Add function to handle auth callback
-  const handleAuthCallback = (params) => {
+  // Update handleAuthCallback to be more robust
+  const handleAuthCallback = (params: URLSearchParams) => {
     const userParam = params.get("user");
     const errorParam = params.get("error");
 
@@ -60,7 +60,10 @@ export const AuthProvider = ({ children }) => {
       try {
         const decodedUser = JSON.parse(atob(userParam));
         signIn(decodedUser);
-        navigate("/dashboard");
+        // Add a small delay to ensure state is updated
+        setTimeout(() => {
+          navigate("/dashboard", { replace: true });
+        }, 100);
       } catch (error) {
         console.error("Failed to parse user data:", error);
         toast.error("Authentication failed");
@@ -74,6 +77,6 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
 export const useAuth = () => useContext(AuthContext);
