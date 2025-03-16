@@ -36,6 +36,16 @@ export const checkAuth = async () => {
   }
 };
 
+/**
+ * Gets the admin URL dynamically
+ */
+export const getAdminUrl = () => {
+  if (import.meta.env.PROD) {
+    return `${window.location.protocol}//${window.location.host}`;
+  }
+  return `http://localhost:${import.meta.env.VITE_PORT || 5173}`;
+};
+
 export const api = async (endpoint: string, options: RequestInit = {}) => {
   const baseUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, "");
   if (!baseUrl) {

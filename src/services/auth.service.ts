@@ -1,4 +1,5 @@
 import api from "../api/client";
+import { getAdminUrl } from "../lib/utils";
 
 interface AuthResponse {
   success: boolean;
@@ -15,9 +16,10 @@ interface AuthResponse {
 export const authService = {
   async getGoogleAuthUrl(): Promise<AuthResponse> {
     try {
+      const adminUrl = getAdminUrl();
       const response = await api.get<AuthResponse>("/auth/google", {
         headers: {
-          Origin: import.meta.env.VITE_ADMIN_URL,
+          Origin: adminUrl,
         },
         withCredentials: true,
       });

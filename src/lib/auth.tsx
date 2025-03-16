@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner"; // Changed from react-toastify to sonner
+import { getAdminUrl } from "./utils";
 
 const AuthContext = createContext(null);
 
@@ -49,6 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const handleAuthCallback = (params: URLSearchParams) => {
     const userParam = params.get("user");
     const errorParam = params.get("error");
+    const adminUrl = getAdminUrl();
 
     if (errorParam) {
       toast.error(decodeURIComponent(errorParam));

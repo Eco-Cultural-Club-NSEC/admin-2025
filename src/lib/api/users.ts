@@ -4,10 +4,20 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 export const usersApi = {
   getUsers: async () => {
-    const response = await axios.get(`${API_URL}/user/all`, {
-      withCredentials: true,
-    });
-    return response.data.users;
+    try {
+      const response = await axios.get(`${API_URL}/user/all`, {
+        withCredentials: true,
+      });
+
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to fetch users");
+      }
+
+      return response.data.users;
+    } catch (error: any) {
+      console.error("Error fetching users:", error);
+      throw new Error(error.response?.data?.message || "Failed to fetch users");
+    }
   },
 
   getUser: async (id: string) => {

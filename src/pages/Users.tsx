@@ -10,9 +10,17 @@ export function Users() {
   const [selectedUser, setSelectedUser] = React.useState<any>(null);
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
 
-  const { data: users, isLoading } = useQuery({
+  const {
+    data: users,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["users"],
     queryFn: usersApi.getUsers,
+    retry: 1,
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to load users");
+    },
   });
 
   const deleteMutation = useMutation({
@@ -49,6 +57,20 @@ export function Users() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <div className="text-red-500 mb-4">Failed to load users</div>
+        <button
+          onClick={() => queryClient.invalidateQueries(["users"])}
+          className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+        >
+          Retry
+        </button>
       </div>
     );
   }

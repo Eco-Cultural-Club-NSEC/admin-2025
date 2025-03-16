@@ -5,6 +5,7 @@ import { useAuth } from "../lib/auth";
 import { toast } from "sonner";
 import { VerificationForm } from "../components/VerificationForm";
 import { FcGoogle } from "react-icons/fc"; // Add this import for Google icon
+import { getAdminUrl } from "../lib/utils";
 
 export function Login() {
   const { signIn, checkAuth } = useAuth();
@@ -23,7 +24,9 @@ export function Login() {
     setError("");
 
     try {
-      const response = await authService.getGoogleAuthUrl();
+      const adminUrl = getAdminUrl();
+      const response = await authService.getGoogleAuthUrl(adminUrl);
+
       if (response.success && response.url) {
         window.location.href = response.url;
       } else {
@@ -60,7 +63,7 @@ export function Login() {
             Sign in with your Google account to access the admin dashboard
           </p>
         </div>
-        
+
         <div className="mt-8">
           <button
             type="button"
@@ -72,7 +75,7 @@ export function Login() {
             {loading ? "Signing in..." : "Sign in with Google"}
           </button>
         </div>
-        
+
         {error && (
           <div className="mt-3 text-sm text-center text-red-500">{error}</div>
         )}
