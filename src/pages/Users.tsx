@@ -2,7 +2,6 @@ import React from "react";
 import { Shield, ShieldOff, Trash } from "lucide-react";
 import { AlertDialog } from "../components/AlertDialog";
 import { useUser } from "../lib/context/UserContext";
-import { toast } from "sonner";
 
 const defaultModalData = {
   title: "",

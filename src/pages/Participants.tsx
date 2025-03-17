@@ -50,8 +50,11 @@ export function Participants() {
       return matchesEvent && matchesStatus && matchesSearch;
     })
     .sort((p1: any, p2: any) =>
-      p1.name[0].localeCompare(p2.name[0], undefined, { sensitivity: "base" })
+      new Date(p2.created_at).getTime() - new Date(p1.created_at).getTime()
     );
+
+    console.log(filteredParticipants);
+    
 
   const toggleStatus = (
     participantId: number,
