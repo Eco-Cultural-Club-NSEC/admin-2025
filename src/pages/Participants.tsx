@@ -49,12 +49,10 @@ export function Participants() {
         participant.email.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesEvent && matchesStatus && matchesSearch;
     })
-    .sort((p1: any, p2: any) =>
-      new Date(p2.created_at).getTime() - new Date(p1.created_at).getTime()
+    .sort(
+      (p1: any, p2: any) =>
+        new Date(p2.created_at).getTime() - new Date(p1.created_at).getTime()
     );
-
-    console.log(filteredParticipants);
-    
 
   const toggleStatus = (
     participantId: number,
@@ -121,7 +119,12 @@ export function Participants() {
   };
 
   const downloadExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(filteredParticipants);
+    const dataWithNames = filteredParticipants.map((participant) => ({
+      ...participant,
+      name: participant.name.join(", "), // Join the array of strings into a single string
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataWithNames);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Participants");
     XLSX.writeFile(workbook, "participants.xlsx");
