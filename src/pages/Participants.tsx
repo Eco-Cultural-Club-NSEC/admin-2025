@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Check, X, Download, Eye, Search, Filter, Trash } from "lucide-react";
+import React from "react";
+import { Check, X, Download, Eye, Search, Trash } from "lucide-react";
 import { Modal } from "../components/Modal";
 import { AlertDialog } from "../components/AlertDialog";
 import { toast } from "sonner";

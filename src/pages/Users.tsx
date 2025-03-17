@@ -1,21 +1,38 @@
 import React from "react";
-import { Shield, ShieldOff } from "lucide-react";
+import { Shield, ShieldOff, Trash } from "lucide-react";
 import { AlertDialog } from "../components/AlertDialog";
 import { useUser } from "../lib/context/UserContext";
+import { toast } from "sonner";
+
+const defaultModalData = {
+  title: "",
+  message: "",
+  onConfirm: "",
+};
 
 export function Users() {
-  const { users, setUsers, updateStatus, loading } = useUser();
+  const { users, updateStatus, deleteUser, loading } = useUser();
   const [showAlertDialog, setShowAlertDialog] = React.useState(false);
-  const [pendingAction, setPendingAction] = React.useState<{
-    userId: number;
-    isAdmin: boolean;
-  } | null>(null);
+  const [pendingAction, setPendingAction] = React.useState<any | null>(null);
 
   const [processingUserId, setProcessingUserId] = React.useState<number | null>(
     null
   );
+  const [modalData, setModalData] = React.useState<{
+    title: string;
+    message: string;
+    onConfirm: string;
+  }>(defaultModalData);
+
   const handleToggleClick = (userId: number, isAdmin: boolean) => {
     setPendingAction({ userId, isAdmin });
+    setModalData({
+      title: isAdmin ? "Deactivate User" : "Activate User",
+      message: isAdmin
+        ? "Are you sure you want to deactivate this user?"
+        : "Are you sure you want to activate this user?",
+      onConfirm: "handleConfirmToggle",
+    });
     setShowAlertDialog(true);
   };
 
@@ -29,6 +46,31 @@ export function Users() {
     } finally {
       setProcessingUserId(null);
       setPendingAction(null);
+      setModalData(defaultModalData);
+    }
+  };
+
+  const handleDeleteClick = (userId: number) => {
+    setPendingAction({ userId });
+    setModalData({
+      title: "Delete User",
+      message: "Are you sure you want to delete this user?",
+      onConfirm: "handleConfirmDelete",
+    });
+    setShowAlertDialog(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!pendingAction) return;
+    setProcessingUserId(pendingAction.userId);
+    try {
+      deleteUser(pendingAction.userId);
+    } catch (error) {
+      console.error("Error deleting user:", error);
+    } finally {
+      setProcessingUserId(null);
+      setPendingAction(null);
+      setModalData(defaultModalData);
     }
   };
 
@@ -108,20 +150,37 @@ export function Users() {
                         )}
                       </td>
                       <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                        <button
-                          onClick={() => handleToggleClick(user.id, user.admin)}
-                          className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
-                        >
-                          {processingUserId === user.id ? (
-                            <div className="animate-spin inline-block w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full"></div>
-                          ) : user.admin ? (
-                            <ShieldOff className="h-5 w-5" />
-                          ) : (
-                            <Shield className="h-5 w-5" />
-                          )}
-
-                          <span className="sr-only">Toggle admin status</span>
-                        </button>
+                        {/* Admin Status Button */}
+                        {processingUserId === user.id ? (
+                          <span className="animate-spin inline-block w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full"></span>
+                        ) : (
+                          <>
+                            {/* toggle button */}
+                            <button
+                              onClick={() =>
+                                handleToggleClick(user.id, user.admin)
+                              }
+                              className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
+                            >
+                              {user.admin ? (
+                                <ShieldOff className="h-5 w-5" />
+                              ) : (
+                                <Shield className="h-5 w-5" />
+                              )}
+                              <span className="sr-only">
+                                Toggle admin status
+                              </span>
+                            </button>
+                            {/* delete user button */}
+                            <button
+                              onClick={() => handleDeleteClick(user.id)}
+                              className="ml-4 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                            >
+                              <Trash className="h-5 w-5" />
+                              <span className="sr-only">Delete user</span>
+                            </button>
+                          </>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -144,13 +203,13 @@ export function Users() {
       <AlertDialog
         isOpen={showAlertDialog}
         onClose={() => setShowAlertDialog(false)}
-        onConfirm={handleConfirmToggle}
-        title="Confirm Admin Status Change"
-        message={`Are you sure you want to ${
-          pendingAction?.isAdmin
-            ? "remove admin access from"
-            : "grant admin access to"
-        } this user? This action can be reversed later.`}
+        onConfirm={
+          modalData.onConfirm === "handleConfirmToggle"
+            ? handleConfirmToggle
+            : handleConfirmDelete
+        }
+        title={modalData.title}
+        message={modalData.message}
       />
     </div>
   );

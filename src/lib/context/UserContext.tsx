@@ -15,6 +15,7 @@ interface UserContextType {
   users: UserType[];
   setUsers: (users: UserType[]) => void;
   updateStatus: (userId: number) => void;
+  deleteUser: (userId: number) => void;
   loading: boolean;
 }
 
@@ -22,6 +23,7 @@ export const UserContext = React.createContext<UserContextType | undefined>({
   users: [],
   setUsers: () => {},
   updateStatus: () => {},
+  deleteUser: () => {},
   loading: false,
 });
 
@@ -73,12 +75,31 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  async function deleteUser(userId: number) {
+    try {
+      const res = await axios.delete(`${apiUri}/user/delete/?id=${userId}`, {
+        withCredentials: true,
+      });
+      if (res.status == 200) {
+        setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
+        toast.success(res.data.message);
+      } else {
+        toast.info(res.data.message);
+      }
+    } catch (error: any) {
+      console.error("Error deleting user:", error);
+      toast.error(error?.response?.data?.message ?? "Error deleting user");
+    }
+  }
+
   useEffect(() => {
     fetchUsers();
   }, []);
 
   return (
-    <UserContext.Provider value={{ users, setUsers, updateStatus, loading }}>
+    <UserContext.Provider
+      value={{ users, setUsers, updateStatus, deleteUser, loading }}
+    >
       {children}
     </UserContext.Provider>
   );
