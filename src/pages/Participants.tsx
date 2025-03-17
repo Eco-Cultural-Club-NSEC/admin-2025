@@ -78,9 +78,6 @@ export function Participants() {
 
     try {
       updateStatus(pendingAction.participantId, pendingAction.newStatus);
-      toast.success(
-        `Participant status ${pendingAction.newStatus} successfully`
-      );
     } catch (error) {
       toast.error("Failed to update participant status");
     } finally {
@@ -471,7 +468,10 @@ export function Participants() {
               </h4>
               <img
                 src={
-                  selectedParticipant.transaction_screenshot
+                  selectedParticipant.transaction_screenshot &&
+                  /^https?:\/\//.test(
+                    selectedParticipant.transaction_screenshot
+                  )
                     ? selectedParticipant.transaction_screenshot
                     : "https://dummyimage.com/400x300/cccccc/000000.png&text=No+Image"
                 }
