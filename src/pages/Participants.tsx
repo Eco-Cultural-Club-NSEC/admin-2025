@@ -76,7 +76,7 @@ export function Participants() {
     setShowAlertDialog(false);
 
     try {
-      // updateStatus(pendingAction.participantId, pendingAction.newStatus);
+      updateStatus(pendingAction.participantId, pendingAction.newStatus);
       toast.success(
         `Participant status ${pendingAction.newStatus} successfully`
       );
