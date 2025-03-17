@@ -23,8 +23,9 @@ interface ParticipantType {
 interface ParticipantsContextType {
   participants: ParticipantType[];
   setParticipants: React.Dispatch<React.SetStateAction<ParticipantType[]>>;
-  updateStatus: (userId: number, status: "approved" | "rejected") => void;
+  updateStatus: (userId: number, status: "approved" | "rejected") => Promise<void>;
   fetchParticipants: () => void;
+  deleteParticipants: (userId: number) => void;
   loading: boolean;
 }
 
@@ -32,11 +33,11 @@ export const ParticipantsContext = React.createContext<ParticipantsContextType |
 
 export function ParticipantsProvider({ children }: { children: React.ReactNode }) {
   const [participants, setParticipants] = useState<ParticipantType[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);   
+  const [loading, setLoading] = useState<boolean>(false);
 
   const fetchParticipants = useCallback(async () => {
     try {
-      setLoading(true); 
+      setLoading(true);
       const res = await axios.get(`${apiUri}/participants`, { withCredentials: true });
       if (res.status === 200) {
         setParticipants(res.data.participants);
@@ -47,7 +48,7 @@ export function ParticipantsProvider({ children }: { children: React.ReactNode }
       console.error("Error fetching participants:", error.message);
       toast.error(error.response?.data?.message || "Error fetching participants");
     } finally {
-      setLoading(false); 
+      setLoading(false);
     }
   }, []);
 
@@ -83,12 +84,33 @@ export function ParticipantsProvider({ children }: { children: React.ReactNode }
     }
   };
 
+  const deleteParticipants = async (userId: number) => {
+    try {
+      const res = await axios.delete(`${apiUri}/participants/delete?id=${userId}`, {
+        withCredentials: true,
+      });
+      if (res.status === 200) {
+        setParticipants((prevParticipants) =>
+          prevParticipants.filter((participant) => participant.id !== userId)
+        );
+        toast.success("Participant deleted successfully");
+      } else {
+        toast.info(res.data.message);
+      }
+    } catch (error: any) {
+      console.error("Error deleting participant:", error);
+      toast.error(
+        error?.response?.data?.message ?? "Error deleting participant"
+      );
+    }
+  };
+
   useEffect(() => {
     fetchParticipants();
   }, [fetchParticipants]);
 
   return (
-    <ParticipantsContext.Provider value={{ participants, setParticipants, updateStatus, fetchParticipants, loading }}>
+    <ParticipantsContext.Provider value={{ participants, setParticipants, updateStatus, fetchParticipants, deleteParticipants, loading }}>
       {children}
     </ParticipantsContext.Provider>
   );

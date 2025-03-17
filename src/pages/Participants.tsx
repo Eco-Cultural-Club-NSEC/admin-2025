@@ -1,13 +1,20 @@
-import React from "react";
-import { Check, X, Download, Eye, Search, Filter } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Check, X, Download, Eye, Search, Filter, Trash } from "lucide-react";
 import { Modal } from "../components/Modal";
 import { AlertDialog } from "../components/AlertDialog";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { useParticipants } from "../lib/context/ParticipantsContext";
 
+const defaultModalData = {
+  title: "",
+  message: "",
+  onConfirm: "",
+};
+
 export function Participants() {
-  const { participants, updateStatus, loading } = useParticipants();
+  const { participants, updateStatus, deleteParticipants, loading } =
+    useParticipants();
   const [selectedEvent, setSelectedEvent] = React.useState<string>("all");
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -18,10 +25,13 @@ export function Participants() {
   const [processingParticipantId, setProcessingParticipantId] = React.useState<
     number | null
   >(null);
-  const [pendingAction, setPendingAction] = React.useState<{
-    participantId: number;
-    newStatus: "approved" | "rejected";
-  } | null>(null);
+  const [pendingAction, setPendingAction] = React.useState<any | null>(null);
+
+  const [modalData, setModalData] = React.useState<{
+    title: string;
+    message: string;
+    onConfirm: string;
+  }>(defaultModalData);
 
   const events = Array.from(new Set(participants.map((p) => p.event)));
 
@@ -43,21 +53,30 @@ export function Participants() {
       p1.name[0].localeCompare(p2.name[0], undefined, { sensitivity: "base" })
     );
 
-  const toggleStatus = async (
+  const toggleStatus = (
     participantId: number,
     newStatus: "approved" | "rejected"
   ) => {
     setPendingAction({ participantId, newStatus });
+    setModalData({
+      title:
+        newStatus === "approved" ? "Approve Participant" : "Reject Participant",
+      message: `Are you sure you want to ${newStatus} this participant?`,
+      onConfirm: "confirmStatusChange",
+    });
+
     setShowAlertDialog(true);
   };
 
-  const confirmStatusChange = async () => {
+  const confirmStatusChange = () => {
+    console.log("pendingAction", pendingAction);
+
     if (!pendingAction) return;
     setProcessingParticipantId(pendingAction.participantId);
     setShowAlertDialog(false);
 
     try {
-      updateStatus(pendingAction.participantId, pendingAction.newStatus);
+      // updateStatus(pendingAction.participantId, pendingAction.newStatus);
       toast.success(
         `Participant status ${pendingAction.newStatus} successfully`
       );
@@ -66,6 +85,35 @@ export function Participants() {
     } finally {
       setProcessingParticipantId(null);
       setPendingAction(null);
+      setModalData(defaultModalData);
+    }
+  };
+
+  const handleDelete = (participantId: number) => {
+    setPendingAction({ participantId });
+    setModalData({
+      title: "Delete Participant",
+      message: "Are you sure you want to delete this participant?",
+      onConfirm: "confirmDelete",
+    });
+    setShowAlertDialog(true);
+  };
+
+  const confirmDelete = () => {
+    console.log("pendingAction", pendingAction);
+
+    if (!pendingAction) return;
+    setProcessingParticipantId(pendingAction.participantId);
+    setShowAlertDialog(false);
+
+    try {
+      deleteParticipants(pendingAction.participantId as number);
+    } catch (error) {
+      toast.error("Failed to delete participant");
+    } finally {
+      setProcessingParticipantId(null);
+      setPendingAction(null);
+      setModalData(defaultModalData);
     }
   };
 
@@ -137,16 +185,6 @@ export function Participants() {
             <option value="rejected">Rejected</option>
           </select>
         </div>
-
-        {loading && (
-          <div className="flex flex-col items-center py-8 space-y-4">
-            <div className="animate-spin inline-block w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full"></div>
-            <span className="text-gray-600 dark:text-gray-300">
-              Loading participants...
-            </span>
-          </div>
-        )}
-
         <div className="mt-8 flex flex-col">
           <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
             <div className="inline-block min-w-full py-2 align-middle">
@@ -229,7 +267,7 @@ export function Participants() {
                           {participant.amount_paid}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
-                          {participant.transaction_id}
+                          {participant.transaction_id ?? "-"}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
                           <span
@@ -310,6 +348,14 @@ export function Participants() {
                                     <Check className="h-5 w-5" />
                                   </button>
                                 )}
+                                {/* delete  */}
+                                <button
+                                  onClick={() => handleDelete(participant.id)}
+                                  className="text-red-600 hover:text-red-900"
+                                  disabled={!!processingParticipantId}
+                                >
+                                  <Trash className="h-5 w-5" />
+                                </button>
                               </>
                             )}
                           </div>
@@ -322,6 +368,15 @@ export function Participants() {
             </div>
           </div>
         </div>
+        {/* loader */}
+        {loading && (
+          <div className="flex flex-col items-center py-8 space-y-4">
+            <div className="animate-spin inline-block w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full"></div>
+            <span className="text-gray-600 dark:text-gray-300">
+              Loading participants...
+            </span>
+          </div>
+        )}
       </div>
       <Modal
         isOpen={showDetailsModal}
@@ -357,6 +412,38 @@ export function Participants() {
               </div>
               <div>
                 <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Event Date
+                </h4>
+                <p className="mt-1 text-sm text-gray-900 dark:text-white">
+                  {new Date(selectedParticipant.event_date).toDateString()}
+                </p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Event Location
+                </h4>
+                <p className="mt-1 text-sm text-gray-900 dark:text-white">
+                  {selectedParticipant.event_location}
+                </p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Amount Paid
+                </h4>
+                <p className="mt-1 text-sm text-gray-900 dark:text-white">
+                  {selectedParticipant.amount_paid}
+                </p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Transaction ID
+                </h4>
+                <p className="mt-1 text-sm text-gray-900 dark:text-white">
+                  {selectedParticipant.transaction_id ?? "-"}
+                </p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400">
                   Status
                 </h4>
                 <p className="mt-1 text-sm text-gray-900 dark:text-white">
@@ -377,7 +464,11 @@ export function Participants() {
                 Transaction Screenshot
               </h4>
               <img
-                src="https://images.unsplash.com/photo-1626266061368-46a8f578ddd6?w=800"
+                src={
+                  selectedParticipant.transaction_screenshot
+                    ? selectedParticipant.transaction_screenshot
+                    : "https://dummyimage.com/400x300/cccccc/000000.png&text=No+Image"
+                }
                 alt="Transaction Screenshot"
                 className="w-full rounded-lg"
               />
@@ -388,10 +479,16 @@ export function Participants() {
 
       <AlertDialog
         isOpen={showAlertDialog}
-        onClose={() => setShowAlertDialog(false)}
-        onConfirm={confirmStatusChange}
-        title="Confirm Status Change"
-        message={`Are you sure you want to ${pendingAction?.newStatus} this participant? This action cannot be undone.`}
+        onClose={() => {
+          setShowAlertDialog(false);
+        }}
+        onConfirm={
+          modalData.onConfirm === "confirmStatusChange"
+            ? confirmStatusChange
+            : confirmDelete
+        }
+        title={modalData.title}
+        message={modalData.message}
       />
       {/* Modals remain same as before */}
     </div>

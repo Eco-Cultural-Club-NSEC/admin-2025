@@ -4,7 +4,7 @@ import { AlertDialog } from "../components/AlertDialog";
 import { useUser } from "../lib/context/UserContext";
 
 export function Users() {
-  const { users, setUsers, updateStatus } = useUser();
+  const { users, setUsers, updateStatus, loading } = useUser();
   const [showAlertDialog, setShowAlertDialog] = React.useState(false);
   const [pendingAction, setPendingAction] = React.useState<{
     userId: number;
@@ -131,6 +131,15 @@ export function Users() {
           </div>
         </div>
       </div>
+      {/* loader */}
+      {loading && (
+        <div className="flex flex-col items-center py-8 space-y-4">
+          <div className="animate-spin inline-block w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full"></div>
+          <span className="text-gray-600 dark:text-gray-300">
+            Loading participants...
+          </span>
+        </div>
+      )}
 
       <AlertDialog
         isOpen={showAlertDialog}

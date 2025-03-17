@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import { apiUri } from "../dummy-data";
 import { toast } from "sonner";
@@ -15,19 +15,23 @@ interface UserContextType {
   users: UserType[];
   setUsers: (users: UserType[]) => void;
   updateStatus: (userId: number) => void;
+  loading: boolean;
 }
 
-export const UserContext = React.createContext<UserContextType>({
+export const UserContext = React.createContext<UserContextType | undefined>({
   users: [],
   setUsers: () => {},
   updateStatus: () => {},
+  loading: false,
 });
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [users, setUsers] = useState<UserType[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  async function fetchUsers() {
+  const fetchUsers = useCallback(async () => {
     try {
+      setLoading(true);
       const res = await axios.get(`${apiUri}/user/all`, {
         withCredentials: true,
       });
@@ -39,8 +43,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     } catch (error: any) {
       console.error("Error fetching users:", error);
       toast.error(error?.response?.data?.message ?? "Error fetching users");
+    } finally {
+      setLoading(false);
     }
-  }
+  }, []);
+
   async function updateStatus(userId: number) {
     try {
       const res = await axios.get(`${apiUri}/user/toggleadmin/?id=${userId}`, {
@@ -71,7 +78,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <UserContext.Provider value={{ users, setUsers, updateStatus }}>
+    <UserContext.Provider value={{ users, setUsers, updateStatus, loading }}>
       {children}
     </UserContext.Provider>
   );

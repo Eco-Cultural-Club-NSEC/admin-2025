@@ -27,7 +27,7 @@ export function Navbar() {
 
   const handleSignOut = async () => {
     try {
-      const res = await axios.get(`${apiUri}/api/v1/auth/logout`, {
+      const res = await axios.get(`${apiUri}/auth/logout`, {
         withCredentials: true,
       });
       console.log("Logout response", res.data);
@@ -35,8 +35,9 @@ export function Navbar() {
       signOut();
       // Redirect user after logout
       navigate("/login");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Logout failed", error);
+      toast.error(error?.response?.data?.message ?? "Logout failed");
     }
   };
 
