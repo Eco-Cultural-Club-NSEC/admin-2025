@@ -23,22 +23,33 @@ interface ParticipantType {
 interface ParticipantsContextType {
   participants: ParticipantType[];
   setParticipants: React.Dispatch<React.SetStateAction<ParticipantType[]>>;
-  updateStatus: (userId: number, status: "approved" | "rejected") => Promise<void>;
-  fetchParticipants: () => void;
-  deleteParticipants: (userId: number) => void;
+  updateStatus: (
+    userId: number,
+    status: "approved" | "rejected"
+  ) => Promise<void>;
+  fetchParticipants: () => Promise<void>;
+  deleteParticipants: (userId: number) => Promise<void>;
   loading: boolean;
 }
 
-export const ParticipantsContext = React.createContext<ParticipantsContextType | undefined>(undefined);
+export const ParticipantsContext = React.createContext<
+  ParticipantsContextType | undefined
+>(undefined);
 
-export function ParticipantsProvider({ children }: { children: React.ReactNode }) {
+export function ParticipantsProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [participants, setParticipants] = useState<ParticipantType[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
   const fetchParticipants = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${apiUri}/participants`, { withCredentials: true });
+      const res = await axios.get(`${apiUri}/participants`, {
+        withCredentials: true,
+      });
       if (res.status === 200) {
         setParticipants(res.data.participants);
       } else {
@@ -46,13 +57,18 @@ export function ParticipantsProvider({ children }: { children: React.ReactNode }
       }
     } catch (error: any) {
       console.error("Error fetching participants:", error.message);
-      toast.error(error.response?.data?.message || "Error fetching participants");
+      toast.error(
+        error?.response?.data?.message ?? "Error fetching participants"
+      );
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [apiUri, setLoading]);
 
-  const updateStatus = async (userId: number, status: string) => {
+  const updateStatus = async (
+    userId: number,
+    status: "approved" | "rejected"
+  ) => {
     try {
       const res = await axios.get(
         `${apiUri}/participants/togglestatus?id=${userId}&status=${status}`,
@@ -60,7 +76,7 @@ export function ParticipantsProvider({ children }: { children: React.ReactNode }
           withCredentials: true,
         }
       );
-      if (res.status == 200) {
+      if (res.status === 200) {
         setParticipants((prevParticipants) =>
           prevParticipants.map((participant) =>
             participant.id === userId
@@ -86,9 +102,12 @@ export function ParticipantsProvider({ children }: { children: React.ReactNode }
 
   const deleteParticipants = async (userId: number) => {
     try {
-      const res = await axios.delete(`${apiUri}/participants/delete?id=${userId}`, {
-        withCredentials: true,
-      });
+      const res = await axios.delete(
+        `${apiUri}/participants/delete?id=${userId}`,
+        {
+          withCredentials: true,
+        }
+      );
       if (res.status === 200) {
         setParticipants((prevParticipants) =>
           prevParticipants.filter((participant) => participant.id !== userId)
@@ -110,7 +129,16 @@ export function ParticipantsProvider({ children }: { children: React.ReactNode }
   }, [fetchParticipants]);
 
   return (
-    <ParticipantsContext.Provider value={{ participants, setParticipants, updateStatus, fetchParticipants, deleteParticipants, loading }}>
+    <ParticipantsContext.Provider
+      value={{
+        participants,
+        setParticipants,
+        updateStatus,
+        fetchParticipants,
+        deleteParticipants,
+        loading,
+      }}
+    >
       {children}
     </ParticipantsContext.Provider>
   );
@@ -119,7 +147,9 @@ export function ParticipantsProvider({ children }: { children: React.ReactNode }
 export function useParticipants() {
   const context = React.useContext(ParticipantsContext);
   if (!context) {
-    throw new Error("useParticipants must be used within a ParticipantsProvider");
+    throw new Error(
+      "useParticipants must be used within a ParticipantsProvider"
+    );
   }
   return context;
 }

@@ -13,19 +13,16 @@ interface UserType {
 
 interface UserContextType {
   users: UserType[];
-  setUsers: (users: UserType[]) => void;
-  updateStatus: (userId: number) => void;
-  deleteUser: (userId: number) => void;
+  setUsers: React.Dispatch<React.SetStateAction<UserType[]>>;
+  fetchUsers: () => Promise<void>;
+  updateStatus: (userId: number) => Promise<void>;
+  deleteUser: (userId: number) => Promise<void>;
   loading: boolean;
 }
 
-export const UserContext = React.createContext<UserContextType | undefined>({
-  users: [],
-  setUsers: () => {},
-  updateStatus: () => {},
-  deleteUser: () => {},
-  loading: false,
-});
+export const UserContext = React.createContext<UserContextType | undefined>(
+  undefined
+);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [users, setUsers] = useState<UserType[]>([]);
@@ -37,7 +34,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       const res = await axios.get(`${apiUri}/user/all`, {
         withCredentials: true,
       });
-      if (res.status == 200) {
+      if (res.status === 200) {
         setUsers(res.data.users);
       } else {
         toast.info(res.data.message);
@@ -48,16 +45,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [apiUri]);
 
   async function updateStatus(userId: number) {
     try {
       const res = await axios.get(`${apiUri}/user/toggleadmin/?id=${userId}`, {
         withCredentials: true,
       });
-      console.log("res", res);
-
-      if (res.status == 200) {
+      if (res.status === 200) {
         setUsers((prevUsers) =>
           prevUsers.map((user) =>
             user.id === userId ? { ...user, admin: res.data.user.admin } : user
@@ -80,7 +75,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       const res = await axios.delete(`${apiUri}/user/delete/?id=${userId}`, {
         withCredentials: true,
       });
-      if (res.status == 200) {
+      if (res.status === 200) {
         setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
         toast.success(res.data.message);
       } else {
@@ -94,11 +89,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [fetchUsers]);
 
   return (
     <UserContext.Provider
-      value={{ users, setUsers, updateStatus, deleteUser, loading }}
+      value={{ users, setUsers, fetchUsers, updateStatus, deleteUser, loading }}
     >
       {children}
     </UserContext.Provider>
@@ -108,9 +103,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 export function useUser() {
   const context = React.useContext(UserContext);
   if (context === undefined) {
-    throw new Error(
-      "useParticipants must be used within a ParticipantsProvider"
-    );
+    throw new Error("useUser must be used within a UserProvider");
   }
   return context;
 }

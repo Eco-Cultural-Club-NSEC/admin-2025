@@ -69,7 +69,7 @@ export function Participants() {
     setShowAlertDialog(true);
   };
 
-  const confirmStatusChange = () => {
+  const confirmStatusChange = async () => {
     console.log("pendingAction", pendingAction);
 
     if (!pendingAction) return;
@@ -77,10 +77,13 @@ export function Participants() {
     setShowAlertDialog(false);
 
     try {
-      updateStatus(pendingAction.participantId, pendingAction.newStatus);
+      // await new Promise((resolve) => setTimeout(resolve, 5000)); // artificial delay
+      await updateStatus(pendingAction.participantId, pendingAction.newStatus);
     } catch (error) {
       toast.error("Failed to update participant status");
     } finally {
+      console.log("finally");
+
       setProcessingParticipantId(null);
       setPendingAction(null);
       setModalData(defaultModalData);
@@ -97,7 +100,7 @@ export function Participants() {
     setShowAlertDialog(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     console.log("pendingAction", pendingAction);
 
     if (!pendingAction) return;
@@ -105,7 +108,7 @@ export function Participants() {
     setShowAlertDialog(false);
 
     try {
-      deleteParticipants(pendingAction.participantId as number);
+      await deleteParticipants(pendingAction.participantId as number);
     } catch (error) {
       toast.error("Failed to delete participant");
     } finally {

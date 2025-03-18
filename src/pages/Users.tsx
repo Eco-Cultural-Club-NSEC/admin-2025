@@ -35,11 +35,11 @@ export function Users() {
     setShowAlertDialog(true);
   };
 
-  const handleConfirmToggle = () => {
+  const handleConfirmToggle = async () => {
     if (!pendingAction) return;
     setProcessingUserId(pendingAction.userId);
     try {
-      updateStatus(pendingAction.userId);
+      await updateStatus(pendingAction.userId);
     } catch (error) {
       console.error("Error updating user status:", error);
     } finally {
@@ -59,11 +59,11 @@ export function Users() {
     setShowAlertDialog(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!pendingAction) return;
     setProcessingUserId(pendingAction.userId);
     try {
-      deleteUser(pendingAction.userId);
+      await deleteUser(pendingAction.userId);
     } catch (error) {
       console.error("Error deleting user:", error);
     } finally {
