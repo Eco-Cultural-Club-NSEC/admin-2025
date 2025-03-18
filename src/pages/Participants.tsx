@@ -70,8 +70,6 @@ export function Participants() {
   };
 
   const confirmStatusChange = async () => {
-    console.log("pendingAction", pendingAction);
-
     if (!pendingAction) return;
     setProcessingParticipantId(pendingAction.participantId);
     setShowAlertDialog(false);
@@ -82,8 +80,6 @@ export function Participants() {
     } catch (error) {
       toast.error("Failed to update participant status");
     } finally {
-      console.log("finally");
-
       setProcessingParticipantId(null);
       setPendingAction(null);
       setModalData(defaultModalData);
@@ -101,8 +97,6 @@ export function Participants() {
   };
 
   const confirmDelete = async () => {
-    console.log("pendingAction", pendingAction);
-
     if (!pendingAction) return;
     setProcessingParticipantId(pendingAction.participantId);
     setShowAlertDialog(false);
