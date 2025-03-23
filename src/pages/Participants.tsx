@@ -326,7 +326,7 @@ export function Participants() {
                                     </button>
                                   </>
                                 )}
-                                {participant.status === "approved" && (
+                                {/* {participant.status === "approved" && (
                                   <button
                                     onClick={() =>
                                       toggleStatus(participant.id, "rejected")
@@ -347,7 +347,7 @@ export function Participants() {
                                   >
                                     <Check className="h-5 w-5" />
                                   </button>
-                                )}
+                                )} */}
                                 {/* delete  */}
                                 <button
                                   onClick={() => handleDelete(participant.id)}

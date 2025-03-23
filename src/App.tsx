@@ -19,17 +19,17 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   const user = useAuth((state) => state.user);
   const signIn = useAuth((state) => state.signIn);
   const [isLoading, setIsLoading] = React.useState(true);
-  
+
   useEffect(() => {
     const checkAuth = async () => {
       console.log("Starting auth check. Current user state:", user);
-      
+
       if (!user) {
         try {
           console.log("No user in state, checking with backend...");
           const userData = await isMe();
           console.log("Backend response:", userData);
-          
+
           if (userData) {
             console.log("Valid user data received, signing in:", userData);
             signIn(userData);
@@ -47,17 +47,17 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     };
-    
+
     checkAuth();
-  }, []);  // Remove dependencies to ensure it only runs once on mount
+  }, []); // Remove dependencies to ensure it only runs once on mount
 
   if (isLoading) {
     return <div>Checking authentication...</div>;
   }
-  
+
   // Access the latest user state
   const currentUser = useAuth.getState().user;
-  
+
   if (!currentUser) {
     console.log("Not logged in, redirecting...");
     return <Navigate to="/login" replace />;
@@ -71,14 +71,13 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   );
 }
 
-
 //Admin route
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const user = useAuth((state) => state.user);
-  // if (!user?.admin) {
-  //   toast.info("Admin access required to access this page!");
-  //   return <Navigate to="/acess-denied" replace />;
-  // }
+  if (!user?.admin) {
+    toast.info("Admin access required to access this page!");
+    return <Navigate to="/acess-denied" replace />;
+  }
   return <>{children}</>;
 }
 
@@ -137,7 +136,9 @@ function AppContent() {
             path="/email-templates"
             element={
               <PrivateRoute>
-                <EmailTemplates />
+                <AdminRoute>
+                  <EmailTemplates />
+                </AdminRoute>
               </PrivateRoute>
             }
           />
