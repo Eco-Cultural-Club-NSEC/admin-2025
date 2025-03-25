@@ -200,9 +200,15 @@ export function Participants() {
                       </th>
                       <th
                         scope="col"
-                        className="px-3 py-3.5 text-left text-sm font-semibold"
+                        className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold sm:pl-6"
                       >
                         Email
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-3 py-3.5 text-left text-sm font-semibold"
+                      >
+                        College
                       </th>
                       <th
                         scope="col"
@@ -256,6 +262,9 @@ export function Participants() {
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
                           {participant.email}
+                        </td>
+                        <td className="whitespace-normal max-w-[200px] break-words py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white sm:pl-6">
+                          {participant?.collage_name}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
                           {participant.whatsapp_no}
@@ -400,6 +409,14 @@ export function Participants() {
                 </h4>
                 <p className="mt-1 text-sm text-gray-900 dark:text-white">
                   {selectedParticipant.email}
+                </p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  College
+                </h4>
+                <p className="mt-1 text-sm text-gray-900 dark:text-white">
+                  {selectedParticipant.collage_name}
                 </p>
               </div>
               <div>
